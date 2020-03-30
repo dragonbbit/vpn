@@ -1,5 +1,5 @@
 FROM centos:centos7
-LABEL maintainer="rabbitD"
+LABEL maintainer="dragonbbit"
 
 ### User Specific Settings Start Here
 ARG PASSWORD="badpassword"
