@@ -17,7 +17,7 @@ ARG DOWNLOAD_URL=https://github.com/trojan-gfw/${NAME}/releases/download/v${VERS
 
 ENV HOME_DIR=/root
 ENV BINARY_PATH=/usr/sbin/${NAME}
-ENV CONFIG_PATH=/etc/${NAME}/config.json
+ENV CONFIG_FILE=/etc/${NAME}/config.json
 
 # Download Linux binary
 WORKDIR ${HOME_DIR}
@@ -35,8 +35,8 @@ RUN yum -y update; yum clean all; yum install -y wget \
     s~\"key_password\".*~\"key_password\": \"${PASSWORD}\",~; \
     s~\"log_level.*~\"log_level\": 2,~" \
     ${NAME}/examples/server.json-example \
-> $CONFIG_PATH
+> $CONFIG_FILE
 
 EXPOSE ${PORT}
 
-ENTRYPOINT ${NAME} -c ${CONFIG_PATH}
+ENTRYPOINT ${NAME} -c ${CONFIG_FILE}
