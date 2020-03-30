@@ -1,4 +1,4 @@
-FROM nginx:1.16-alpine
+FROM alpine:3.10
 LABEL maintainer="dragonbbit"
 
 ########################################
@@ -59,7 +59,5 @@ RUN wget ${DOWNLOAD_URL} && unzip ${ZIP_FILE} && rm ${ZIP_FILE} \
     }\n\
   ]\n\
 }\n" > ${CONFIG_PATH}/config.json
-
-EXPOSE 80 443
 
 ENTRYPOINT ${NAME} -config ${CONFIG_PATH}/config.json
