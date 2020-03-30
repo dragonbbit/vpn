@@ -2,20 +2,22 @@ FROM nginx:1.16-alpine
 LABEL maintainer="dragonbbit"
 
 ########################################
-###      User Specific Settings      ###
+### User Specific Settings           ###
 ########################################
 ARG DOMAIN_NAME="vpn.test.com"
 ARG V2RAY_CLIENT_ID="d342160a-7efb-4bf3-b8b9-995a0f50a1fb"
 
-#############################################
-###           Make Certificate            ###
-#############################################
+########################################
+### Make Certificate                 ###
+########################################
 RUN apk add openssl curl socat\
     && wget -O -  https://get.acme.sh | sh
 
-#############################################
-### Configure Nginx as TLS proxy to V2ray ###
-#############################################
+########################################
+### Configure Nginx as:              ###
+### 1. HTTP proxy for trojan         ###
+### 2. TLS proxy for V2ray           ###
+########################################
 ARG HOMEPAGE="https://www.taobao.com"
 
 # Change defalt HTTP port to 8080
