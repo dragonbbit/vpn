@@ -1,0 +1,73 @@
+FROM nginx:1.16-alpine
+LABEL maintainer="rabbitD"
+
+########################################
+###      User Specific Settings      ###
+########################################
+ARG DOMAIN_NAME="vpn.test.com"
+ARG V2RAY_CLIENT_ID="d342160a-7efb-4bf3-b8b9-995a0f50a1fb"
+
+#############################################
+###           Make Certificate            ###
+#############################################
+RUN apk add openssl curl socat\
+    && wget -O -  https://get.acme.sh | sh
+
+#############################################
+### Configure Nginx as TLS proxy to V2ray ###
+#############################################
+ARG HOMEPAGE="https://www.taobao.com"
+
+# Change defalt HTTP port to 8080
+RUN sed -i "s~listen \+80~listen   8080~" /etc/nginx/conf.d/default.conf \
+&& printf "\n\
+server {\n\
+    listen  443 ssl;\n\
+    \n\
+    server_name *.${DOMAIN_NAME};\n\
+    \n\
+    ssl_certificate       /etc/nginx/cert/${DOMAIN_NAME}.cert.pem;\n\
+    ssl_certificate_key   /etc/nginx/cert/${DOMAIN_NAME}.key.pem;\n\
+    \n\
+    ssl_protocols         TLSv1 TLSv1.1 TLSv1.2;\n\
+    ssl_ciphers           HIGH:!aNULL:!MD5;\n\
+    \n\
+    location / {\n\
+        root   /usr/share/nginx/html;\n\
+        index  index.html index.htm;\n\
+    }\n\
+    \n\
+    location /${V2RAY_CLIENT_ID} {\n\
+        proxy_redirect off;\n\
+        proxy_pass http://127.0.0.1:10000;\n\
+        proxy_http_version 1.1;\n\
+        proxy_set_header Upgrade \$http_upgrade;\n\
+        proxy_set_header Connection \"upgrade\";\n\
+        proxy_set_header Host \$http_host;\n\
+        \n\
+        # Show realip in v2ray access.log\n\
+        proxy_set_header X-Real-IP \$remote_addr;\n\
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n\
+    }\n\
+}\n" > /etc/nginx/conf.d/${DOMAIN_NAME}.ssl.conf\
+# make a fake home page
+    && wget ${HOMEPAGE} -O /usr/share/nginx/html/index.html\
+# create start.sh
+    && printf "#!/bin/sh\n\
+/root/.acme.sh/acme.sh --issue --keylength ec-256 -d ${DOMAIN_NAME} --standalone --test\n\
+/root/.acme.sh/acme.sh --install-cert -d jigg.xyz --ecc \
+--key-file /etc/nginx/cert/jigg.xyz.key.pem \
+--fullchain-file /etc/nginx/cert/jigg.xyz.cert.pem \
+--reloadcmd \"nginx -s reload\"\n\
+# update cron job to start at 3:00am GMT+8
+/root/.acme.sh/acme.sh --uninstall-cronjob\n\
+(crontab -l ; \
+echo \"0 19 * * * /root/.acme.sh/acme.sh --cron --home /root/.acme.sh >> /root/cert_new.log\") \
+| crontab - \n\
+crond\n\
+nginx -g \"daemon off;\"\n" > /root/start.sh\
+    && chmod +x /root/start.sh 
+
+CMD /root/start.sh
+
+EXPOSE 80 443

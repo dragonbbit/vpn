@@ -1,0 +1,42 @@
+FROM centos:centos7
+LABEL maintainer="rabbitD"
+
+### User Specific Settings Start Here
+ARG PASSWORD="badpassword"
+ARG DOMAIN_NAME="nodomain.com"
+ARG PORT=443
+ARG REMOTE_ADDR=127.0.0.1
+ARG REMOTE_PORT=8080
+### User Specific Settings End
+
+ARG NAME=trojan
+ARG VERSION=1.14.1
+
+ARG TAR_BALL=${NAME}-${VERSION}-linux-amd64.tar.xz
+ARG DOWNLOAD_URL=https://github.com/trojan-gfw/${NAME}/releases/download/v${VERSION}/${TAR_BALL}
+
+ENV HOME_DIR=/root
+ENV BINARY_PATH=/usr/sbin/${NAME}
+ENV CONFIG_PATH=/etc/${NAME}/config.json
+
+# Download Linux binary
+WORKDIR ${HOME_DIR}
+RUN yum -y update; yum clean all; yum install -y wget \
+    && wget -O - $DOWNLOAD_URL | tar -xJ \
+    && install -Dm755 ${NAME}/${NAME} ${BINARY_PATH}\
+# Make config file 
+    && mkdir -p /etc/$NAME\
+    && sed "s~\"password1\",~\"${PASSWORD}\"~; s~\"password2\"~~; \
+    s~443~${PORT}~; \
+    s~\"remote_addr\".*~\"remote_addr\": \"${REMOTE_ADDR}\",~; \
+    s~\"remote_port\".*~\"remote_port\": ${REMOTE_PORT},~; \
+    s~/path/to/certificate.crt~/etc/trojan/cert/${DOMAIN_NAME}.cert.pem~; \
+    s~/path/to/private.key~/etc/trojan/cert/${DOMAIN_NAME}.key.pem~; \
+    s~\"key_password\".*~\"key_password\": \"${PASSWORD}\",~; \
+    s~\"log_level.*~\"log_level\": 2,~" \
+    ${NAME}/examples/server.json-example \
+> $CONFIG_PATH
+
+EXPOSE ${PORT}
+
+ENTRYPOINT ${NAME} -c ${CONFIG_PATH}
