@@ -1,90 +1,65 @@
 FROM nginx:1.16-alpine
-LABEL maintainer="draggonji"
+LABEL maintainer="dragonbbit"
 
 ########################################
 ###      User Specific Settings      ###
 ########################################
-ARG DOMAIN_NAME="vpn.test.com"
 # please use new UUID (cat /proc/sys/kernel/random/uuid) to replace this ID
-ARG CLIENT_ID="d342160a-7efb-4bf3-b8b9-995a0f50a1fb"
+ARG V2RAY_CLIENT_ID="d342160a-7efb-4bf3-b8b9-995a0f50a1fb"
 
 ########################################
 ###     Download and setup V2Ray     ###
 ########################################
-ARG NAME=v2ray
-ARG VERSION=4.22.1
+ENV NAME=v2ray
 
+ARG VERSION=4.22.1
 ARG ZIP_FILE=${NAME}-linux-64.zip
 ARG DOWNLOAD_URL=https://github.com/v2ray/v2ray-core/releases/download/v${VERSION}/${ZIP_FILE}
+ARG CTL_EXE="v2ctl"
 
-ENV HOME_DIR=/usr/src/${NAME}
-ENV BINARY_PATH=/usr/sbin/${NAME}
+ENV HOME_DIR=/root
+ENV BINARY_PATH=/usr/sbin
 ENV CONFIG_PATH=/etc/${NAME}
 
 # download Linux binary
 WORKDIR ${HOME_DIR}
-#RUN wget ${DOWNLOAD_URL}; unzip ${ZIP_FILE}; rm ${ZIP_FILE}; \
-#    && install -Dm755 ${NAME} ${BINARY_PATH} \
-#    && for f in *.dat; do \
-#           install -Dm644 -t ${CONFIG_PATH} ${f}; \
-#       done\
+RUN wget ${DOWNLOAD_URL} && unzip ${ZIP_FILE} && rm ${ZIP_FILE} \
+    && install -Dm755 ${NAME} ${BINARY_PATH}/${NAME} \
+    && install -Dm755 ${CTL_EXE} ${BINARY_PATH}/${CTL_EXE} \
+    && for f in *.dat; do \
+           install -Dm644 -t ${CONFIG_PATH} ${f}; \
+       done\
 # make config file
-
-ENV V2RAY_LOCATION_ASSET=${CONFIG_PATH}
-ENV V2RAY_LOCATION_CONFIG=${CONFIG_PATH}
-
-#############################################
-###           Make Certificate            ###
-#############################################
-RUN apk add openssl \
-    && wget -O -  https://get.acme.sh | sh
-
-#############################################
-### Configure Nginx as TLS proxy to V2ray ###
-#############################################
-ARG FAKE_HOMEPAGE="https://www.taobao.com"
-
-RUN printf "\n\
-server {\n\
-    listen  443 ssl;\n\
-    \n\
-    server_name ${DOMAIN_NAME};\n\
-    \n\
-    ssl_certificate       ${CONFIG_PATH}/v2ray.crt;\n\
-    ssl_certificate_key   ${CONFIG_PATH}/v2ray.key;\n\
-    \n\
-    ssl_protocols         TLSv1 TLSv1.1 TLSv1.2;\n\
-    ssl_ciphers           HIGH:!aNULL:!MD5;\n\
-    \n\
-    location / {\n\
-        root   /usr/share/nginx/html;\n\
-        index  index.html index.htm;\n\
+    && printf "\
+{\n\
+  \"inbounds\": [\n\
+    {\n\
+      \"port\": 10000,\n\
+      \"protocol\": \"vmess\",\n\
+      \"settings\": {\n\
+        \"clients\": [\n\
+          {\n\
+            \"id\": \"${V2RAY_CLIENT_ID}\",\n\
+            \"alterId\": 64\n\
+          }\n\
+        ]\n\
+      },\n\
+      \"streamSettings\": {\n\
+        \"network\": \"ws\",\n\
+        \"wsSettings\": {\n\
+        \"path\": \"/${V2RAY_CLIENT_ID}\"\n\
+        }\n\
+      }\n\
     }\n\
-    \n\
-    location /${CLIENT_ID} {\n\
-        proxy_redirect off;\n\
-        proxy_pass http://127.0.0.1:10000;\n\
-        proxy_http_version 1.1;\n\
-        proxy_set_header Upgrade \$http_upgrade;\n\
-        proxy_set_header Connection \"upgrade\";\n\
-        proxy_set_header Host \$http_host;\n\
-        \n\
-        # Show realip in v2ray access.log\n\
-        proxy_set_header X-Real-IP \$remote_addr;\n\
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n\
+],\n\
+\"outbounds\": [\n\
+    {\n\
+      \"protocol\": \"freedom\",\n\
+      \"settings\": {}\n\
     }\n\
-}\n" > /etc/nginx/conf.d/ssl.${DOMAIN_NAME}.conf \
-# make a fake home page
-    && wget ${FAKE_HOMEPAGE} -O /usr/share/nginx/html/index.html
+  ]\n\
+}\n" > ${CONFIG_PATH}/config.json
 
-###############################################
-### Setup crontab job to update certificate ###
-###############################################
-
-
-###############################################
-###             Build Entrypoint            ###
-###############################################
 EXPOSE 80 443
 
-
+ENTRYPOINT ${NAME} -config ${CONFIG_PATH}/config.json
