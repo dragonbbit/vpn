@@ -1,0 +1,64 @@
+FROM centos:7
+LABEL maintainer="dragonbbit"
+
+########################################
+###      User Specific Settings      ###
+########################################
+# please use new UUID (cat /proc/sys/kernel/random/uuid) to replace this ID
+ARG V2RAY_CLIENT_ID="d342160a-7efb-4bf3-b8b9-995a0f50a1fb"
+
+########################################
+###     Download and setup V2Ray     ###
+########################################
+ENV NAME=v2ray
+
+ARG VERSION=4.22.1
+ARG ZIP_FILE=${NAME}-linux-64.zip
+ARG DOWNLOAD_URL=https://github.com/v2ray/v2ray-core/releases/download/v${VERSION}/${ZIP_FILE}
+ARG CTL_EXE="v2ctl"
+
+ENV HOME_DIR=/root
+ENV BINARY_PATH=/usr/sbin
+ENV CONFIG_PATH=/etc/${NAME}
+
+# download Linux binary
+WORKDIR ${HOME_DIR}
+RUN yum -y update; yum clean all; yum install -y wget unzip iproute \
+    && wget ${DOWNLOAD_URL} && unzip ${ZIP_FILE} && rm ${ZIP_FILE} \
+    && install -Dm755 ${NAME} ${BINARY_PATH}/${NAME} \
+    && install -Dm755 ${CTL_EXE} ${BINARY_PATH}/${CTL_EXE} \
+    && for f in *.dat; do \
+           install -Dm644 ${f} ${CONFIG_PATH}/${f}; \
+       done\
+# make config file
+    && printf "\
+{\n\
+  \"inbounds\": [\n\
+    {\n\
+      \"port\": 10000,\n\
+      \"protocol\": \"vmess\",\n\
+      \"settings\": {\n\
+        \"clients\": [\n\
+          {\n\
+            \"id\": \"${V2RAY_CLIENT_ID}\",\n\
+            \"alterId\": 64\n\
+          }\n\
+        ]\n\
+      },\n\
+      \"streamSettings\": {\n\
+        \"network\": \"ws\",\n\
+        \"wsSettings\": {\n\
+        \"path\": \"/${V2RAY_CLIENT_ID}\"\n\
+        }\n\
+      }\n\
+    }\n\
+],\n\
+\"outbounds\": [\n\
+    {\n\
+      \"protocol\": \"freedom\",\n\
+      \"settings\": {}\n\
+    }\n\
+  ]\n\
+}\n" > ${CONFIG_PATH}/config.json
+
+ENTRYPOINT ${NAME} -config ${CONFIG_PATH}/config.json
