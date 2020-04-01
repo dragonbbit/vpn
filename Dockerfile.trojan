@@ -21,7 +21,7 @@ ENV CONFIG_FILE=/etc/${NAME}/config.json
 
 # Download Linux binary
 WORKDIR ${HOME_DIR}
-RUN yum -y update; yum clean all; yum install -y wget \
+RUN yum -y update; yum clean all; yum install -y wget cronie \
     && wget -O - $DOWNLOAD_URL | tar -xJ \
     && install -Dm755 ${NAME}/${NAME} ${BINARY_PATH}\
 # Make config file 
@@ -34,9 +34,31 @@ RUN yum -y update; yum clean all; yum install -y wget \
     s~/path/to/private.key~/etc/trojan/cert/${DOMAIN_NAME}.key.pem~; \
     s~\"key_password\".*~\"key_password\": \"${PASSWORD}\",~; \
     s~\"log_level.*~\"log_level\": 2,~" \
-    ${NAME}/examples/server.json-example \
-> $CONFIG_FILE
+    ${NAME}/examples/server.json-example > $CONFIG_FILE \
+# Make start script
+    && printf "#!/bin/sh\n\
+(crontab -l; echo \"30 19 * * * ${HOME_DIR}/check_cert.sh") | crontab - \n\
+crond\n\
+stat -c %Y /etc/trojan/cert/${DOMAIN_NAME}.cert.pem > cert.time\n\
+while ${NAME} -c ${CONFIG_FILE}; do \n\
+echo 'Restart Trojan...'\n\
+done\n" > start.sh\
+    && chmod +x start.sh\
+# Make script for checking certificate update periodically
+    && printf "#!/bin/sh\n\
+if [[ \$(cat cert.time) -eq \$(stat -c %Y /etc/trojan/cert/${DOMAIN_NAME}.cert.pem) ]]; then\n\
+    exit 0\n\
+fi\n\
+trojan_pid=$(ps | grep \".*${NAME}\" | cut -d \" \" -f2)\n\
+if [[ $(echo $trojan_pid | wc -m) -ne 0 ]]; then\n\
+    #kill \${trojan_pid}\n\
+    echo "kill \${trojan_pid}"\n\
+else\n\
+    echo "Can't find trojan process to kill"\n\
+fi\n\
+\n" > check_cert.sh\
+    && chmod +x check_cert.sh\
 
 EXPOSE ${PORT}
 
-ENTRYPOINT ${NAME} -c ${CONFIG_FILE}
+CMD /root/start.sh
