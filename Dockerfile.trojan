@@ -37,27 +37,32 @@ RUN yum -y update; yum clean all; yum install -y wget cronie \
     ${NAME}/examples/server.json-example > $CONFIG_FILE \
 # Make start script
     && printf "#!/bin/sh\n\
-(crontab -l; echo \"30 19 * * * ${HOME_DIR}/check_cert.sh") | crontab - \n\
+(crontab -l; echo \"30 19 * * * ${HOME_DIR}/check_cert.sh\") | crontab - \n\
 crond\n\
-stat -c %Y /etc/trojan/cert/${DOMAIN_NAME}.cert.pem > cert.time\n\
+stat -c %%Y /etc/trojan/cert/${DOMAIN_NAME}.cert.pem > cert.time\n\
 while ${NAME} -c ${CONFIG_FILE}; do \n\
-echo 'Restart Trojan...'\n\
+    echo \"Restarting Trojan.\"\n\
 done\n" > start.sh\
     && chmod +x start.sh\
 # Make script for checking certificate update periodically
     && printf "#!/bin/sh\n\
-if [[ \$(cat cert.time) -eq \$(stat -c %Y /etc/trojan/cert/${DOMAIN_NAME}.cert.pem) ]]; then\n\
+if [[ ! -f ${HOME_DIR}/cert.time ]]; then\n\
+    echo \"Certificate time file not found.\"\n\
+    exit 1\n\
+fi\n\
+if [[ \$(cat ${HOME_DIR}/cert.time) -eq \$(stat -c %%Y /etc/trojan/cert/${DOMAIN_NAME}.cert.pem) ]]; then\n\
     exit 0\n\
 fi\n\
-trojan_pid=$(ps | grep \".*${NAME}\" | cut -d \" \" -f2)\n\
-if [[ $(echo $trojan_pid | wc -m) -ne 0 ]]; then\n\
-    #kill \${trojan_pid}\n\
-    echo "kill \${trojan_pid}"\n\
-else\n\
-    echo "Can't find trojan process to kill"\n\
+echo \"Killing trojan for certificate update\"\n\
+trojan_pid=\$(pgrep ${NAME})\n\
+kill \${trojan_pid}\n\
+sleep 5\n\
+if [[ \${trojan_pid} -ne \$(pgrep ${NAME}) ]]; then\n\
+    stat -c %%Y /etc/trojan/cert/${DOMAIN_NAME}.cert.pem > ${HOME_DIR}/cert.time\n\
+    echo \"Updated certificate time file.\"\n\
 fi\n\
-\n" > check_cert.sh\
-    && chmod +x check_cert.sh\
+\n"> check_cert.sh\
+    && chmod +x check_cert.sh
 
 EXPOSE ${PORT}
 
