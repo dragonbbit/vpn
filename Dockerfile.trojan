@@ -37,7 +37,7 @@ RUN yum -y update; yum clean all; yum install -y wget cronie \
     ${NAME}/examples/server.json-example > $CONFIG_FILE \
 # Make start script
     && printf "#!/bin/sh\n\
-(crontab -l; echo \"30 19 * * * ${HOME_DIR}/check_cert.sh >> /${HOME_DIR}/check_cert.log \") | crontab - \n\
+(crontab -l; echo \"30 19 * * * ${HOME_DIR}/check_cert.sh >> ${HOME_DIR}/check_cert.log\") | crontab - \n\
 crond\n\
 stat -c %%Y /etc/trojan/cert/${DOMAIN_NAME}.cert.pem > cert.time\n\
 while ${NAME} -c ${CONFIG_FILE}; do \n\
