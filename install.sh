@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 Green_font_prefix="\033[32m" 
 Red_font_prefix="\033[31m"
@@ -109,7 +109,6 @@ docker build -t trojan --build-arg PASSWORD=${password} --build-arg DOMAIN_NAME=
 docker run -d -v ~/.cert:/etc/trojan/cert -p ${trojan_port}:${trojan_port} --restart=always --name trojan_instance trojan
 
 ### Build v2ray
-v2ray_client_id=$(docker exec v2ray_instance sh -c "cat /etc/v2ray/config.json" | egrep '"id"' | egrep -o '[0-9a-fA-F]{8}.*[0-9a-fA-F]{12}')
 docker build -t v2ray --rm --build-arg V2RAY_CLIENT_ID=${v2ray_client_id} -f Dockerfile.v2ray .
 docker run -d --name v2ray_instance --restart=always v2ray
 

@@ -56,7 +56,7 @@ server {\n\
     && wget ${HOMEPAGE} -O /usr/share/nginx/html/index.html\
 # create start.sh
     && printf "#!/bin/sh\n\
-/root/.acme.sh/acme.sh --issue --keylength ec-256 -d ${DOMAIN_NAME} --standalone --test\n\
+/root/.acme.sh/acme.sh --issue --keylength ec-256 -d ${DOMAIN_NAME} --standalone --test \n\
 /root/.acme.sh/acme.sh --install-cert -d jigg.xyz --ecc \
 --key-file /etc/nginx/cert/jigg.xyz.key.pem \
 --fullchain-file /etc/nginx/cert/jigg.xyz.cert.pem \
