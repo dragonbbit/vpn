@@ -101,7 +101,7 @@ install_docker
 ### Build Cert
 mkdir -p ~/.cert
 docker build -t web --rm --build-arg DOMAIN_NAME=${domain_name} --build-arg CERT_PORT=${cert_port} -f Dockerfile.cert .
-docker run -d --name cert_instance --restart=always -v ~/.cert:/etc/nginx/cert -p ${cert_port}:${cert_port} cert
+docker run -d --name cert_instance --restart=always -v ~/.cert:/etc/acme/cert -p ${cert_port}:${cert_port} cert
 
 ### Build Web
 docker build -t web --rm --build-arg DOMAIN_NAME=${domain_name} --build-arg V2RAY_CLIENT_ID=${v2ray_client_id} -f Dockerfile.web .

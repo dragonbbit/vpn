@@ -17,8 +17,8 @@ RUN apk add openssl curl socat\
     && printf "#!/bin/sh\n\
 /root/.acme.sh/acme.sh --issue --keylength ec-256 -d ${DOMAIN_NAME} --standalone --httpport ${CERT_PORT} --test \n\
 /root/.acme.sh/acme.sh --install-cert -d jigg.xyz --ecc \
---key-file /etc/nginx/cert/jigg.xyz.key.pem \
---fullchain-file /etc/nginx/cert/jigg.xyz.cert.pem \
+--key-file /etc/acme/cert/jigg.xyz.key.pem \
+--fullchain-file /etc/acme/cert/jigg.xyz.cert.pem \
 --reloadcmd \"nginx -s reload\"\n\
 # update cron job to start at 3:00am GMT+8
 /root/.acme.sh/acme.sh --uninstall-cronjob\n\
