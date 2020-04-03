@@ -90,7 +90,6 @@ get_info "请输入口令："
 password=${_info}
 v2ray_client_id=$(cat /proc/sys/kernel/random/uuid)
 trojan_port=4443
-cert_port=8000
 
 install_docker
 
@@ -98,25 +97,28 @@ install_docker
 ### Setup Docker                 ###
 ####################################
 
-### Build Cert
-mkdir -p ~/.cert
-docker build -t cert --rm --build-arg DOMAIN_NAME=${domain_name} --build-arg CERT_PORT=${cert_port} -f Dockerfile.cert .
-docker run -d --name cert_instance --restart=always -v ~/.cert:/etc/acme/cert -p ${cert_port}:${cert_port} cert
+# ### Build Cert
+# mkdir -p ~/.cert
+# docker build -t cert --rm --build-arg DOMAIN_NAME=${domain_name} --build-arg CERT_PORT=${cert_port} -f Dockerfile.cert .
+# docker run -d --name cert_instance --restart=always -v ~/.cert:/etc/acme/cert -p 80:80 cert
 
-### Build Web
-docker build -t web --rm --build-arg DOMAIN_NAME=${domain_name} --build-arg V2RAY_CLIENT_ID=${v2ray_client_id} -f Dockerfile.web .
-docker run -d --name web_instance --restart=always -v ~/.cert:/etc/nginx/cert -p 80:80 -p 443:443 cert
+# ### Build Web
+# docker build -t web --rm --build-arg DOMAIN_NAME=${domain_name} --build-arg V2RAY_CLIENT_ID=${v2ray_client_id} -f Dockerfile.web .
+# docker run -d --name web_instance --restart=always -v ~/.cert:/etc/nginx/cert -p 80:80 -p 443:443 cert
+
+### Build Cert request and Web server
+mkdir -p ~/.cert
+docker build -t certweb --rm --build-arg DOMAIN_NAME=${domain_name} --build-arg V2RAY_CLIENT_ID=${v2ray_client_id} -f Dockerfile.certweb .
+docker run -d --name certweb_instance --restart=always -v ~/.cert:/etc/nginx/cert -p 80:80 -p 443:443 certweb
 
 ### Build Speed Test Web App
 docker pull adolfintel/speedtest
 docker run -d --name speedtest_instance --restart=always -e MODE=standalone -e TELEMETRY=true -e ENABLE_ID_OBFUSCATION=true -e PASSWORD=${password} adolfintel/speedtest
-speedtest_addr=$(docker exec web_instance sh -c "/sbin/ip a" | grep -o "inet.*eth" | grep -o "[[:digit:]]\+.*\/")
-speedtest_addr=${speedtest_addr:0:-1}
-docker exec -t web_instance sh -c "sed -i \"s~speedtest_ip~${speedtest_addr}~\" /etc/nginx/conf.d/speed_test.conf&&nginx -s reload"
+speedtest_addr=$(docker exec speedtest_instance sh -c "hostname -i")
+docker exec -t certweb_instance sh -c "sed -i \"s~127.127.127.127~${speedtest_addr}~\" /etc/nginx/conf.d/speedtest.conf&&nginx -s reload"
 
 ### Build Trojan 
-certweb_addr=$(docker exec certweb_instance sh -c "/sbin/ip a" | grep -o "inet.*eth" | grep -o "[[:digit:]]\+.*\/")
-certweb_addr=${certweb_addr:0:-1}
+certweb_addr=$(docker exec web_instance sh -c "hostname -i")
 docker build -t trojan --build-arg PASSWORD=${password} --build-arg DOMAIN_NAME=${domain_name} --build-arg PORT=${trojan_port} --build-arg REMOTE_ADDR=${certweb_addr} --rm -f Dockerfile.trojan .
 docker run -d -v ~/.cert:/etc/trojan/cert -p ${trojan_port}:${trojan_port} --restart=always --name trojan_instance trojan
 
@@ -125,9 +127,8 @@ docker build -t v2ray --rm --build-arg V2RAY_CLIENT_ID=${v2ray_client_id} -f Doc
 docker run -d --name v2ray_instance --restart=always v2ray
 
 ### Update web proxy address
-v2ray_addr=$(docker exec v2ray_instance sh -c "/sbin/ip a" | grep -o "inet.*eth" | grep -o "[[:digit:]]\+.*\/")
-v2ray_addr=${v2ray_addr:0:-1}
-docker exec -t web_instance sh -c "sed -i \"s~//.*:10000;~//${v2ray_addr}:10000;~\" /etc/nginx/conf.d/*.ssl.conf&&nginx -s reload"
+v2ray_addr=$(docker exec v2ray_instance sh -c "hostname -i")
+docker exec -t certweb_instance sh -c "sed -i \"s~//.*:10000;~//${v2ray_addr}:10000;~\" /etc/nginx/conf.d/*.ssl.conf&&nginx -s reload"
 
 ####################################
 ### Show Info                    ###
