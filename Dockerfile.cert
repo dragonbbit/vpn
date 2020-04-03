@@ -1,0 +1,36 @@
+FROM nginx:1.16-alpine
+LABEL maintainer="dragonbbit"
+
+########################################
+### User Specific Settings           ###
+########################################
+ARG DOMAIN_NAME="nodomain.com"
+ARG CERT_PORT=8000
+
+########################################
+### Make Certificate                 ###
+########################################
+RUN apk add openssl curl socat\
+    && wget -O -  https://get.acme.sh | sh
+
+# create start.sh
+    && printf "#!/bin/sh\n\
+/root/.acme.sh/acme.sh --issue --keylength ec-256 -d ${DOMAIN_NAME} --standalone --httpport ${CERT_PORT} --test \n\
+/root/.acme.sh/acme.sh --install-cert -d jigg.xyz --ecc \
+--key-file /etc/nginx/cert/jigg.xyz.key.pem \
+--fullchain-file /etc/nginx/cert/jigg.xyz.cert.pem \
+--reloadcmd \"nginx -s reload\"\n\
+# update cron job to start at 3:00am GMT+8
+/root/.acme.sh/acme.sh --uninstall-cronjob\n\
+(crontab -l ; \
+echo \"0 19 * * * /root/.acme.sh/acme.sh --cron --home /root/.acme.sh >> /root/cert_new.log\") \
+| crontab - \n\
+crond\n\
+tail -f /dev/null\n" > /root/start.sh\
+    && chmod +x /root/start.sh 
+
+EXPOSE ${CERT_PORT}
+
+CMD /root/start.sh
+
+
