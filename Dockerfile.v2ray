@@ -12,7 +12,7 @@ ARG V2RAY_CLIENT_ID="d342160a-7efb-4bf3-b8b9-995a0f50a1fb"
 ########################################
 ENV NAME=v2ray
 
-ARG VERSION=4.22.1
+ARG VERSION=4.23.1
 ARG ZIP_FILE=${NAME}-linux-64.zip
 ARG DOWNLOAD_URL=https://github.com/v2ray/v2ray-core/releases/download/v${VERSION}/${ZIP_FILE}
 ARG CTL_EXE="v2ctl"
