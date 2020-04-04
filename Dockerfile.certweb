@@ -77,9 +77,9 @@ server {\n\
     && printf "#!/bin/sh\n\
 nginx -g \"daemon off;\"&\n\
 /root/.acme.sh/acme.sh --issue --nginx --keylength ec-256 -d ${DOMAIN_NAME} --nginx /etc/nginx/conf.d/default.conf --test \n\
-/root/.acme.sh/acme.sh --install-cert -d jigg.xyz --ecc \
---key-file /etc/nginx/cert/jigg.xyz.key.pem \
---fullchain-file /etc/nginx/cert/jigg.xyz.cert.pem \
+/root/.acme.sh/acme.sh --install-cert -d ${DOMAIN_NAME} --ecc \
+--key-file /etc/nginx/cert/${DOMAIN_NAME}.key.pem \
+--fullchain-file /etc/nginx/cert/${DOMAIN_NAME}.cert.pem \
 --reloadcmd \"nginx -s reload\"\n\
 mv /etc/nginx/conf.d/${DOMAIN_NAME}.ssl  /etc/nginx/conf.d/${DOMAIN_NAME}.ssl.conf\n\
 nginx -s reload\n\
