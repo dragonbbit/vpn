@@ -11,7 +11,7 @@ Error="${Red_font_prefix}[错误]${Font_color_suffix}"
 Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
 
 check_sys(){
-    if [[ -f /etc/redhat-release ]]; then
+    if test -f "/etc/redhat-release"; then
         release="centos"
     elif cat /etc/issue | grep -q -E -i "debian"; then
         release="debian"
@@ -51,15 +51,16 @@ install_docker_on_ubuntu() {
 }
 
 install_docker() {
-    if [[ -f /usr/bin/docker ]]; then
+    if test -f "/usr/bin/docker"; then
         echo -e ${Info} "发现Docker，无需安装！"
         return
     fi    
     check_sys
-    if [[ "${release}" == "centos" ]]; then
+    if test "${release}" = "centos"; then
         install_docker_on_centos
-    elif [[ "${release}" == "ubuntu" ]]; then
-        echo "install docker on ubuntu"
+    elif test "${release}" = "ubuntu"; then
+	install_docker_on_ubuntu
+	return
     else
         echo -e ${Error} "无法在此系统自动安装Docker。请手工安装"
         exit 1
@@ -73,7 +74,7 @@ get_info(){
     while :
     do
         read -p $1 _info
-        if [[ $(echo -n $_info | wc -m) -gt 0 ]]; then        
+        if test "$(echo -n $_info | wc -m)" != "0"; then 
             break
         fi
         echo -e ${Error} "输入错误"
