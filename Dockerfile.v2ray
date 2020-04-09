@@ -58,6 +58,7 @@ RUN wget ${DOWNLOAD_URL} && unzip ${ZIP_FILE} && rm ${ZIP_FILE} \
       \"settings\": {}\n\
     }\n\
   ]\n\
-}\n" > ${CONFIG_PATH}/config.json
+}\n" > ${CONFIG_PATH}/config.json \
+    && rm -rf *
 
 ENTRYPOINT ${NAME} -config ${CONFIG_PATH}/config.json
