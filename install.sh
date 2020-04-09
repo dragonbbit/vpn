@@ -119,8 +119,8 @@ speedtest_addr=$(docker exec speedtest_instance sh -c "hostname -i")
 docker exec -t certweb_instance sh -c "sed -i \"s~127.127.127.127~${speedtest_addr}~\" /etc/nginx/conf.d/speedtest.conf&&nginx -s reload"
 
 ### Build Trojan 
-certweb_addr=$(docker exec web_instance sh -c "hostname -i")
-docker build -t trojan --build-arg PASSWORD=${password} --build-arg DOMAIN_NAME=${domain_name} --build-arg PORT=${trojan_port} --build-arg REMOTE_ADDR=${certweb_addr} --rm -f Dockerfile.trojan .
+certweb_addr=$(docker exec certweb_instance sh -c "hostname -i")
+docker build -t trojan --build-arg PASSWORD=${password} --build-arg DOMAIN_NAME=${domain_name} --build-arg PORT=${trojan_port} --build-arg REMOTE_ADDR=${certweb_addr} --build-arg REMOTE_PORT=80 --rm -f Dockerfile.trojan .
 docker run -d -v ~/.cert:/etc/trojan/cert -p ${trojan_port}:${trojan_port} --restart=always --name trojan_instance trojan
 
 ### Build v2ray
