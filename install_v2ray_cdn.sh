@@ -146,7 +146,7 @@ docker run -d --name v2ray_instance --restart=always v2ray
 
 ### Update web proxy address
 v2ray_addr=$(docker exec v2ray_instance sh -c "hostname -i")
-docker exec web_instance sh -c "sed -i \"s~//.*:10000;~//${v2ray_addr}:10000;~\" /etc/nginx/conf.d/default.conf&&nginx -s reload"
+docker exec web_instance sh -c "sed -i \"s~//.*:10000;~//${v2ray_addr}:10000;~\" /etc/nginx/conf.d/default.conf"
 
 ### Reload nginx confi
 docker exec web_instance sh -c "nginx -s reload"
