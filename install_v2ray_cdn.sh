@@ -68,6 +68,7 @@ install_docker() {
     
     sudo usermod -aG docker ${USER}
     exec newgrp docker
+    echo -e ${Info} "Docker安装成功！请重新运行本安装脚本。"
 }
 
 get_info(){
@@ -99,8 +100,7 @@ install_docker
 ### Build Web
 docker run -d --name web_instance --restart=always -p 80:80 nginx:stable-alpine
 docker exec  web_instance sh -c "mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak"
-docker exec web_instance sh -c "\
-cat << EOF > /etc/nginx/conf.d/default.conf
+docker exec web_instance sh -c "printf \"
 server {
     listen   80;
     server_name  ${domain_name} www.${domain_name};
@@ -113,28 +113,26 @@ server {
         proxy_redirect off;
         proxy_pass http://127.0.0.1:10000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade \044http_upgrade;
         proxy_set_header Connection \"upgrade\";
-        proxy_set_header Host \$http_host;
+        proxy_set_header Host \044http_host;
         
         # Show realip in v2ray access.log
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP \044remote_addr;
+        proxy_set_header X-Forwarded-For \044proxy_add_x_forwarded_for;
     }
-}
-EOF"
-docker exec -t web_instance sh -c "\
-cat << EOF > /etc/nginx/conf.d/speedtest.conf
+}\" > /etc/nginx/conf.d/default.conf"
+docker exec  web_instance sh -c "printf \"
 server {
     listen   80;
     server_name  speedtest.${domain_name};
     location / {
         proxy_pass http://127.127.127.127;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Real-IP \044remote_addr;
+        proxy_set_header X-Forwarded-For \044proxy_add_x_forwarded_for;
     }
-}
-EOF"
+}\" > /etc/nginx/conf.d/speedtest.conf"
+
 
 ### Build Speed Test Web App
 docker pull adolfintel/speedtest
