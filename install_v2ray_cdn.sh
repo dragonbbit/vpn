@@ -85,13 +85,15 @@ get_info(){
 ####################################
 ### Install Docker               ###
 ####################################
+install_docker
 
+####################################
+### Retrieve Info                ###
+####################################
 get_info "请输入域名："
 domain_name=${_info}
 v2ray_client_id=$(cat /proc/sys/kernel/random/uuid)
 trojan_port=4443
-
-install_docker
 
 ####################################
 ### Setup Docker                 ###
