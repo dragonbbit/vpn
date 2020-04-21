@@ -62,7 +62,8 @@ if [[ \${trojan_pid} -ne \$(pgrep ${NAME}) ]]; then\n\
     echo \"Updated certificate time file.\"\n\
 fi\n\
 \n"> check_cert.sh\
-    && chmod +x check_cert.sh
+    && chmod +x check_cert.sh\
+    && rm -rf trojan
 
 EXPOSE ${PORT}
 
