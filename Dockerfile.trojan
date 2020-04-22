@@ -15,7 +15,7 @@ ARG VERSION=1.14.1
 ARG TAR_BALL=${NAME}-${VERSION}-linux-amd64.tar.xz
 ARG DOWNLOAD_URL=https://github.com/trojan-gfw/${NAME}/releases/download/v${VERSION}/${TAR_BALL}
 
-ENV DNS=8.8.8.8
+ARG DNS=8.8.8.8
 
 ENV HOME_DIR=/root
 ENV BINARY_PATH=/usr/sbin/${NAME}
@@ -42,6 +42,7 @@ RUN yum -y update; yum clean all; yum install -y wget cronie \
 (crontab -l; echo \"30 19 * * * ${HOME_DIR}/check_cert.sh >> ${HOME_DIR}/check_cert.log\") | crontab - \n\
 crond\n\
 stat -c %%Y /etc/trojan/cert/${DOMAIN_NAME}.cert.pem > cert.time\n\
+echo \"nameserver ${DNS}\" > /etc/resolv.conf\n\
 while ${NAME} -c ${CONFIG_FILE}; do \n\
     echo \"Restarting Trojan.\"\n\
 done\n" > start.sh\
