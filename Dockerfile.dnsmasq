@@ -1,0 +1,36 @@
+FROM alpine:3.10
+LABEL maintainer="dragonbbit"
+
+############################################
+### DNS: Streaming proxy DNS             ###
+############################################
+ARG DNS=""
+
+############################################
+### Install and configure dnsmasq server ###
+############################################
+RUN apk update \
+    && apk --no-cache add dnsmasq \
+    && sh -c "if test -n \"${DNS}\"; \
+        then \
+        touch /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/netflix.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/netflix.net/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/nflximg.net/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/nflximg.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/nflxvideo.net/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/nflxso.net/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/nflxext.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/scdn.co/$1{DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/spotify.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/spoti.fi/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/hulu.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/huluim.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/hbo.com/$\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/hbogoasia.hk/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/hbogo.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/hbonow.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/hboasia.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        fi"
+
+#ENTRYPOINT ["dnsmasq", "-k"]
