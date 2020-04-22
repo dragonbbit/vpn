@@ -11,9 +11,12 @@ ARG DNS=""
 ############################################
 RUN apk update \
     && apk --no-cache add dnsmasq \
-    && sh -c "if test -n \"${DNS}\"; \
-        then \
+    && sh -c "\
         touch /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=8.8.8.8\" > /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=8.8.4.4\" >> /etc/dnsmasq.d/unlock.conf; \
+        if test \"${DNS}\"; \
+        then \        
         echo \"server=/netflix.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/netflix.net/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/nflximg.net/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
@@ -21,12 +24,12 @@ RUN apk update \
         echo \"server=/nflxvideo.net/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/nflxso.net/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/nflxext.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
-        echo \"server=/scdn.co/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/scdn.co/$1{DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/spotify.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/spoti.fi/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/hulu.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/huluim.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
-        echo \"server=/hbo.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
+        echo \"server=/hbo.com/$\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/hbogoasia.hk/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/hbogo.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/hbonow.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \

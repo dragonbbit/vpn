@@ -17,6 +17,8 @@ ARG ZIP_FILE=${NAME}-linux-64.zip
 ARG DOWNLOAD_URL=https://github.com/v2ray/v2ray-core/releases/download/v${VERSION}/${ZIP_FILE}
 ARG CTL_EXE="v2ctl"
 
+ARG DNS=127.0.0.1
+
 ENV HOME_DIR=/root
 ENV BINARY_PATH=/usr/sbin
 ENV CONFIG_PATH=/etc/${NAME}
@@ -59,6 +61,7 @@ RUN wget ${DOWNLOAD_URL} && unzip ${ZIP_FILE} && rm ${ZIP_FILE} \
     }\n\
   ]\n\
 }\n" > ${CONFIG_PATH}/config.json \
-    && rm -rf *
+    && rm -rf * \
+    && echo "nameserver ${DNS}" > /etc/resolv.conf
 
 ENTRYPOINT ${NAME} -config ${CONFIG_PATH}/config.json

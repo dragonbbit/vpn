@@ -74,10 +74,14 @@ get_info(){
     while :
     do
         read -p $1 _info
-        if test "$(echo -n $_info | wc -m)" != "0"; then 
+        if test ${_info}; then             
             break
         fi
-        echo -e ${Error} "输入错误"
+        if test $2; then
+            set $_info = $2
+            break
+        fi
+        echo ${Error} "输入错误"
     done
 }
 
@@ -91,23 +95,28 @@ install_docker
 ####################################
 get_info "请输入域名："
 domain_name=${_info}
-get_info "请输入口令："
+get_info "请输入Trojan口令："
 password=${_info}
-v2ray_client_id=$(cat /proc/sys/kernel/random/uuid)
+get_info "请输入v2ray的UUID："
+v2ray_client_id=${_info} #$(cat /proc/sys/kernel/random/uuid)
+get_info "请输入流媒体解锁DNS（回车确认无流媒体解锁服务）：" "None"
+if test _info = "None"
+then
+    streaming_dns=""
+else
+    streaming_dns=${_info}
+fi
+
 trojan_port=4443
 
 ####################################
 ### Setup Docker                 ###
 ####################################
 
-# ### Build Cert
-# mkdir -p ~/.cert
-# docker build -t cert --rm --build-arg DOMAIN_NAME=${domain_name} --build-arg CERT_PORT=${cert_port} -f Dockerfile.cert .
-# docker run -d --name cert_instance --restart=always -v ~/.cert:/etc/acme/cert -p 80:80 cert
-
-# ### Build Web
-# docker build -t web --rm --build-arg DOMAIN_NAME=${domain_name} --build-arg V2RAY_CLIENT_ID=${v2ray_client_id} -f Dockerfile.web .
-# docker run -d --name web_instance --restart=always -v ~/.cert:/etc/nginx/cert -p 80:80 -p 443:443 cert
+### Build dnsmasq
+docker build -t dnsmasq --rm --build-arg DNS=${streaming_dns} -f Dockerfile.dnsmasq .
+docker run -d --name dnsmasq_instance --restart=always dnsmasq
+dns_addr=$(docker exec dnsmasq_instance sh -c "hostname -i")
 
 ### Build Cert request and Web server
 mkdir -p ~/.cert
@@ -116,17 +125,21 @@ docker run -d --name certweb_instance --restart=always -v ~/.cert:/etc/nginx/cer
 
 ### Build Speed Test Web App
 docker pull adolfintel/speedtest
-docker run -d --name speedtest_instance --restart=always -e MODE=standalone -e TELEMETRY=true -e ENABLE_ID_OBFUSCATION=true -e PASSWORD=${password} adolfintel/speedtest
+docker run -d --name speedtest_instance --restart=always -e MODE=standalone -e TELEMETRY=true \
+        -e ENABLE_ID_OBFUSCATION=true -e PASSWORD=${password} adolfintel/speedtest
 speedtest_addr=$(docker exec speedtest_instance sh -c "hostname -i")
 docker exec -t certweb_instance sh -c "sed -i \"s~127.127.127.127~${speedtest_addr}~\" /etc/nginx/conf.d/speedtest.conf&&nginx -s reload"
 
-### Build Trojan 
+### Build Trojan
 certweb_addr=$(docker exec certweb_instance sh -c "hostname -i")
-docker build -t trojan --build-arg PASSWORD=${password} --build-arg DOMAIN_NAME=${domain_name} --build-arg PORT=${trojan_port} --build-arg REMOTE_ADDR=${certweb_addr} --build-arg REMOTE_PORT=80 --rm -f Dockerfile.trojan .
+docker build -t trojan --build-arg PASSWORD=${password} --build-arg DOMAIN_NAME=${domain_name} \
+        --build-arg PORT=${trojan_port} --build-arg REMOTE_ADDR=${certweb_addr} \
+        --build-arg REMOTE_PORT=80 --build-arg DNS=${dns_addr} \
+        --rm -f Dockerfile.trojan .
 docker run -d -v ~/.cert:/etc/trojan/cert -p ${trojan_port}:${trojan_port} --restart=always --name trojan_instance trojan
 
 ### Build v2ray
-docker build -t v2ray --rm --build-arg V2RAY_CLIENT_ID=${v2ray_client_id} -f Dockerfile.v2ray .
+docker build -t v2ray --rm --build-arg V2RAY_CLIENT_ID=${v2ray_client_id} --build-arg DNS=${dns_addr} -f Dockerfile.v2ray .
 docker run -d --name v2ray_instance --restart=always v2ray
 
 ### Update web proxy address

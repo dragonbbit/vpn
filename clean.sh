@@ -1,6 +1,6 @@
 #!/bin/sh
 
-docker stop trojan_instance v2ray_instance certweb_instance speedtest_instance
-docker rm trojan_instance v2ray_instance certweb_instance speedtest_instance
-docker rmi trojan v2ray certweb adolfintel/speedtest
+docker stop trojan_instance v2ray_instance certweb_instance speedtest_instance dnsmasq_instance
+docker rm trojan_instance v2ray_instance certweb_instance speedtest_instance dnsmasq_instance
+docker rmi trojan v2ray certweb adolfintel/speedtest dnsmasq
 
