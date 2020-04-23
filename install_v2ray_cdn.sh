@@ -75,10 +75,14 @@ get_info(){
     while :
     do
         read -p $1 _info
-        if test "$(echo -n $_info | wc -m)" != "0"; then 
+        if test ${_info}; then             
             break
         fi
-        echo -e ${Error} "输入错误"
+        if test $2; then
+            set $_info = $2
+            break
+        fi
+        echo ${Error} "输入错误"
     done
 }
 
@@ -92,12 +96,23 @@ install_docker
 ####################################
 get_info "请输入域名："
 domain_name=${_info}
-v2ray_client_id=$(cat /proc/sys/kernel/random/uuid)
-trojan_port=4443
+get_info "请输入v2ray的UUID："
+v2ray_client_id=${_info} #$(cat /proc/sys/kernel/random/uuid)
+get_info "请输入流媒体解锁DNS（回车确认无流媒体解锁服务）：" "None"
+if test _info = "None"
+then
+    streaming_dns=""
+else
+    streaming_dns=${_info}
+fi
 
 ####################################
 ### Setup Docker                 ###
 ####################################
+### Build dnsmasq
+docker build -t dnsmasq --rm --build-arg DNS=${streaming_dns} -f Dockerfile.dnsmasq .
+docker run -d --name dnsmasq_instance --restart=always dnsmasq
+dns_addr=$(docker exec dnsmasq_instance sh -c "hostname -i")
 
 ### Build Web
 docker run -d --name web_instance --restart=always -p 80:80 nginx:stable-alpine
@@ -143,7 +158,7 @@ speedtest_addr=$(docker exec speedtest_instance sh -c "hostname -i")
 docker exec web_instance sh -c "sed -i \"s~127.127.127.127~${speedtest_addr}~\" /etc/nginx/conf.d/speedtest.conf"
 
 ### Build v2ray
-docker build -t v2ray --rm --build-arg V2RAY_CLIENT_ID=${v2ray_client_id} -f Dockerfile.v2ray .
+docker build -t v2ray --rm --build-arg V2RAY_CLIENT_ID=${v2ray_client_id} --build-arg DNS=${dns_addr} -f Dockerfile.v2ray .
 docker run -d --name v2ray_instance --restart=always v2ray
 
 ### Update web proxy address
