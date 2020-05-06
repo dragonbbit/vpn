@@ -25,8 +25,6 @@ RUN apk update \
         echo \"server=/nflxso.net/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/nflxext.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/scdn.co/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
-        echo \"server=/spotify.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
-        echo \"server=/spoti.fi/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/hulu.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/huluim.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
         echo \"server=/hbo.com/${DNS}\" >> /etc/dnsmasq.d/unlock.conf; \
