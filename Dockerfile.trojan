@@ -11,7 +11,7 @@ ARG REMOTE_PORT=8080
 
 ENV NAME=trojan
 
-ARG VERSION=1.14.1
+ARG VERSION=1.16.0
 ARG TAR_BALL=${NAME}-${VERSION}-linux-amd64.tar.xz
 ARG DOWNLOAD_URL=https://github.com/trojan-gfw/${NAME}/releases/download/v${VERSION}/${TAR_BALL}
 
