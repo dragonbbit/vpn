@@ -11,7 +11,7 @@ ARG V2RAY_CLIENT_ID="d342160a-7efb-4bf3-b8b9-995a0f50a1fb"
 ### Make Certificate                 ###
 ########################################
 RUN apk add openssl curl socat\
-    && wget -O -  https://get.acme.sh | sh
+    && wget -O -  https://get.acme.sh | sh -s email=trihair@hotmail.com
 
 ########################################
 ### Configure Nginx as:              ###
